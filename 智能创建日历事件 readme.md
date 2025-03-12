@@ -1,0 +1,232 @@
+# 工作流程
+
+## 示例文本、测试用例（可以让 ai 写）
+
+### 飞机往返行程
+#### （OCR 原始结果带特殊字符）
+去程3月13日 周四 杭州-大阪
+航班起降时间均为当地时间
+收起
+机场英文名
+17:25●HGH 萧山国际机场 T4
+2h35m
+多海航旗下首都航JD365|经济舱|中型机320
+到达准点率100%
+21:00KIX关西国际机场 T1
+返程3月17日 周一 大阪-杭州
+航班起降时间均为当地时间
+机场英文名
+收起 ^
+19:20●KIX关西国际机场 T1
+3h1 0mi
+︾厦航MF8708|经济舱|中型机737到达准点率86.67%
+21:30HGH 萧山国际机场T4
+#### （不带特殊字符）
+去程3月13日 周四 杭州-大阪
+航班起降时间均为当地时间
+收起
+机场英文名
+17:25 HGH 萧山国际机场 T4
+2h35m
+海航旗下首都航JD365|经济舱|中型机320
+到达准点率100%
+21:00KIX关西国际机场 T1
+返程3月17日 周一 大阪-杭州
+航班起降时间均为当地时间
+机场英文名
+收起
+19:20 KIX关西国际机场 T1
+3h1 0mi
+厦航MF8708|经济舱|中型机737到达准点率86.67%
+21:30HGH 萧山国际机场T4
+#### console
+```
+处理中，请稍候...
+AI 解析完成，识别到 2 个事件，正在创建日历事件...
+成功创建事件: "去程 杭州-大阪"
+开始时间: 2025-03-13 17:25:00
+结束时间: 2025-03-13 21:00:00
+描述: 去程3月13日 周四 杭州-大阪 航班起降时间均为当地时间 收起 机场英文名 17:25 HGH 萧山国际机场 T4 2h35m 海航旗下首都航JD365|经济舱|中型机320 到达准点率100% 21:00KIX关西国际机场 T1 返程3月17日 周一 大阪-杭州 航班起降时间均为当地时间 机场英文名 收起 19:20 KIX关西国际机场 T1 3h1 0mi 厦航MF8708|经济舱|中型机737到达准点率86.67% 21:30HGH 萧山国际机场T4
+------------------------
+成功创建事件: "返程 大阪-杭州"
+开始时间: 2025-03-17 19:20:00
+结束时间: 2025-03-17 21:30:00
+描述: 去程3月13日 周四 杭州-大阪 航班起降时间均为当地时间 收起 机场英文名 17:25 HGH 萧山国际机场 T4 2h35m 海航旗下首都航JD365|经济舱|中型机320 到达准点率100% 21:00KIX关西国际机场 T1 返程3月17日 周一 大阪-杭州 航班起降时间均为当地时间 机场英文名 收起 19:20 KIX关西国际机场 T1 3h1 0mi 厦航MF8708|经济舱|中型机737到达准点率86.67% 21:30HGH 萧山国际机场T4
+------------------------
+所有日历事件已创建完成!
+
+Done in 10.89s
+```
+
+### 无具体日期
+今天下午 2 点打球，打 2 个小时
+饿了
+明天的现在，吃饭
+现在开始打球，打到明天早上 5 点
+### claude 3.7 的用例，用 google/gemini-2.0-flash-lite-001 测试
+模糊时间表达：
+"下周一到周三去北京出差，记得提前订酒店"
+
+相对时间表达：
+"三天后的下午跟客户约了视频会议，大概需要一小时"
+
+混合具体与相对时间：
+"本月20号开始休年假，一直到下个月初回来"
+
+时间段表达：
+"后天早上8点到11点半参加培训课程，地点在市中心"
+
+重复性事件：
+"从这周开始，每周四晚上7点到9点参加吉他课"（哈哈）
+
+隐含时间的表达：
+"记得今年妈妈生日买蛋糕，她喜欢巧克力口味的"（哈哈）
+
+季节性表达：
+"今年夏天计划去云南避暑，大概待两周时间"（哈哈）
+
+特定事件相关时间：
+"圣诞节前一周需要准备公司年会的演讲"（哈哈）
+
+模糊结束时间：
+"明天上午十点开始开会，等讨论完所有议题再结束"（哈哈）
+
+多事件连续安排：
+"这个周末先去健身房锻炼两小时，然后和朋友吃午饭，晚上还要参加同学聚会"（失败，因为“周末”不确定是周六还是周日，“周日可以”）
+
+## 让 ai 写代码的过程
+尝试层层递进，直接给大任务的话出问题找起来太麻烦，所以一步一步写
+先写一个最简单的AppleScript命令，无需用户输入，直接运行即可在 Mac 的"收件箱"日历中创建预定义的事件。
+写一个更简单的raycast 脚本，不需要用户输入，只要运行就可以在在 Mac 的"收件箱"日历中创建相应的事件
+写一个 raycast 脚本来根据用户输入的内容在 mac 的日历 app 的名为“收件箱”的日历中创建多个日历时间；用户输入的内容是如下的 json，时间日期的格式都是严格的
+raycast 似乎不能获取本地环境变量
+原来创建日历的时间写法非常严格，包含中文！
+
+经验
+1. 遇到第一个问题是 raycast 似乎不能获取本地环境变量
+2. 能否做成 raycast 的 extension，放到 store 里，像其他人做的那样，用之前要在设置页面输入 api key
+3. 实在不行就硬编码到脚本里
+4. ai 生成的代码会遇到调用方法有问题（查 OpenRouter 后台的 usage，根本就没消耗）、对返回结果的提取有问题，所以要把请求和返回的例子也告诉它
+5. gpt-4o-mini 似乎不如 gpt-4o
+6. 先让 ai 生成 prompt（获取 json 的那个），再各种验证这个 prompt 的质量（使用 cherry studio 的助手“智能创建日历事件json”）
+7. 遇到 OpenRouter 的 provider=openai 的接口报错说不支持的国家（另一个 provider 是 azure）；然后从 gpt-4o换成了
+google/gemini-2.0-flash-lite-001
+
+### 最终成功的：按照下面的内容让 ai 写代码（耗时8小时、$2）
+0. 使用 cherry studio 的助手“开发工程师” claude3.7 
+1. 运行《示例文本》，一开始忘记替换真实的 apikey，替换后一次成功
+2. 发现对“今天”的理解有误，可能是时区的问题，改了以后一次成功
+3. 发现 bug：对当前小时，理解有误，改了一会成功了
+4. 发现 bug：《示例文本》的第一个日程重复创建，好像不知道怎么又成功了
+### to do
+1. 硬伤：api key 硬编码
+2. 特殊字符清理, 见另一个 markdown
+3. 做成 raycast extension
+
+## 要求
+编写一个严谨认真的 raycast 脚本。脚本运行时，要求用户输入文本。将用户输入的内容以 curl 的方式、通过下面提供的 prompt 来请求 openrouter 的模型 openai/gpt-4o 接口（ai 接口返回的内容必定是一段 json），从 json 中提取信息通过下面提供的 apple script 来在名为“收件箱”的日历中创建1 个或多个日程。注意：请将OPENROUTER_API_KEY硬编码在脚本中。
+
+## prompt
+
+将用户输入的内容转换为符合以下 JSON schema 的纯粹 JSON 数组用来作为在 mac 日历中通过 apple script 创建日程的原始信息，仅返回严格格式的 JSON 数据，不包含多余字符或标点，确保格式正确。
+1. 如果未提供时间，使用当前日期（"${currentDate}"）和当前小时作为开始时间，持续时间为 1 小时。
+2. 如果只提供了开始日期而未提供结束日期，默认将结束日期设置为与开始日期相同。
+3. 用户输入的原始内容作为 description
+用户输入: "${input}"
+
+JSON Schema:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["summary", "startDate", "endDate", "description"],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Brief summary of the event"
+      },
+      "startDate": {
+        "type": "string",
+        "description": "Start date and time in YYYY-MM-DD HH:MM:SS format",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+        "examples": ["2025-03-13 17:25:00"]
+      },
+      "endDate": {
+        "type": "string",
+        "description": "End date and time in YYYY-MM-DD HH:MM:SS format",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+        "examples": ["2025-03-13 21:00:00"]
+      },
+      "description": {
+        "type": "string",
+        "description": "用户输入的原始内容"
+      }
+    },
+    "additionalProperties": false
+  },
+  "minItems": 1,
+  "uniqueItems": true
+}
+
+
+## curl 调用 ai 接口的请求和返回例子
+### 请求
+```
+curl https://openrouter.ai/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+  -d '{
+  "model": "openai/gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the meaning of life? Answer in 2 sentences."
+    }
+  ]
+  
+}'
+```
+### 返回
+```
+{
+    "id": "gen-1741349618-aLMDY48wOjm1nfe8HKbD",
+    "provider": "OpenAI",
+    "model": "openai/gpt-4o",
+    "object": "chat.completion",
+    "created": 1741349618,
+    "choices": [
+        {
+            "logprobs": null,
+            "finish_reason": "stop",
+            "native_finish_reason": "stop",
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "The meaning of life often revolves around finding purpose, connection, and fulfillment through relationships, experiences, and personal growth. Each individual may define their own meaning based on their beliefs, values, and aspirations, making it a deeply personal journey.",
+                "refusal": null
+            }
+        }
+    ],
+    "system_fingerprint": "fp_06737a9306",
+    "usage": {
+        "prompt_tokens": 20,
+        "completion_tokens": 48,
+        "total_tokens": 68
+    }
+}
+```
+
+## apple script 创建日程
+
+tell application "Calendar"
+	set inbox to first calendar whose name is "收件箱"
+	
+	-- 创建去程航班事件
+	set startDate to (date "2025-03-08 17:25:00")
+	set endDate to (date "2025-03-08 21:00:00")
+	
+	tell inbox
+		make new event with properties {summary:"去程", start date:startDate, end date:endDate, description:"航班：JD365"}
+	end tell
+end tell
