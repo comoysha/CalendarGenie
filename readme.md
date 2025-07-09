@@ -55,6 +55,9 @@ npm run dev
 
 ## 🎯 使用方法
 
+1. 复制 `.env.example` 文件为 `.env`：
+   ```bash
+   cp .env.example .env
 1. 在 Raycast 中输入 "Calendar Genie"
 2. 粘贴或输入包含日程信息的文本（如邮件、消息或会议纪要）
 3. 按下回车，让魔法发生

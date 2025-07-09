@@ -17,13 +17,60 @@
 
 const { exec } = require('child_process');
 const { promisify } = require('util');
+const fs = require('fs');
+const path = require('path');
 const execPromise = promisify(exec);
 
-// 硬编码 API 密钥
-const OPENROUTER_API_KEY = "xxxxxxxx"; // 请替换为您实际的 API 密钥
+// 从环境变量或配置文件读取配置
+function getConfig() {
+  const config = {
+    apiKey: null,
+    model: 'google/gemini-2.0-flash-001' // 默认模型
+  };
+  
+  // 首先尝试从环境变量读取
+  if (process.env.OPENROUTER_API_KEY) {
+    config.apiKey = process.env.OPENROUTER_API_KEY;
+  }
+  if (process.env.AI_MODEL) {
+    config.model = process.env.AI_MODEL;
+  }
+  
+  // 如果环境变量不存在，尝试从 .env 文件读取
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const lines = envContent.split('\n');
+    for (const line of lines) {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        const trimmedKey = key.trim();
+        const trimmedValue = value.trim();
+        if (trimmedKey === 'OPENROUTER_API_KEY' && !config.apiKey) {
+          config.apiKey = trimmedValue;
+        } else if (trimmedKey === 'AI_MODEL') {
+          config.model = trimmedValue;
+        }
+      }
+    }
+  }
+  
+  if (!config.apiKey) {
+    throw new Error('未找到 OPENROUTER_API_KEY。请在 .env 文件中设置或作为环境变量提供。');
+  }
+  
+  return config;
+}
 
 async function main() {
   try {
+    // 获取配置
+    const config = getConfig();
+    const OPENROUTER_API_KEY = config.apiKey;
+    const AI_MODEL = config.model;
+    
+    console.log(`使用模型: ${AI_MODEL}`);
+    
     const userInput = process.argv.slice(2).join(" ");
     
     if (!userInput) {
@@ -96,7 +143,7 @@ JSON Schema:
 
     // 使用 JSON.stringify 正确处理 API 请求体
     const requestBody = JSON.stringify({
-      "model": "google/gemini-2.0-flash-001",
+      "model": AI_MODEL,
       "messages": [
         {
           "role": "user",
