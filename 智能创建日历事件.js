@@ -3,7 +3,7 @@
 // Required parameters:
 // @raycast.schemaVersion 1
 // @raycast.title 智能创建日历事件
-// @raycast.mode silent
+// @raycast.mode fullOutput
 // @raycast.packageName 日历工具
 
 // Optional parameters:
