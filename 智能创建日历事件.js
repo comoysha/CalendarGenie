@@ -3,7 +3,7 @@
 // Required parameters:
 // @raycast.schemaVersion 1
 // @raycast.title 智能创建日历事件
-// @raycast.mode fullOutput
+// @raycast.mode silent
 // @raycast.packageName 日历工具
 
 // Optional parameters:
@@ -14,6 +14,8 @@
 // @raycast.description 根据自然语言描述创建日历事件
 // @raycast.author shylock
 // @raycast.authorURL https://github.com/shylock
+
+// 调试改模式： fullOutput silent
 
 const { exec } = require('child_process');
 const { promisify } = require('util');
@@ -81,8 +83,15 @@ async function main() {
     console.log("处理中，请稍候...");
     console.log("用户输入:", userInput);
     
-    // 清理用户输入，移除或转义可能导致问题的特殊字符（只是针对特殊的例子，不全面）
-    const sanitizedInput = userInput.replace(/●/g, '').trim();
+    // 清理用户输入，移除或转义可能导致问题的特殊字符
+    const sanitizedInput = userInput
+      .replace(/●/g, '')           // 移除特殊符号
+      .replace(/\t/g, ' ')         // 将制表符替换为空格
+      .replace(/\r\n/g, ' ')       // 将Windows换行符替换为空格
+      .replace(/\n/g, ' ')         // 将换行符替换为空格
+      .replace(/\r/g, ' ')         // 将回车符替换为空格
+      .replace(/\s+/g, ' ')        // 将多个连续空格替换为单个空格
+      .trim();
     console.log("清理后的输入:", sanitizedInput);
     
     // 获取当前日期时间，针对中国东八区(UTC+8)进行优化
@@ -99,12 +108,20 @@ async function main() {
 
     console.log(`当前日期时间: ${currentDate}`);
     
+    // 对用户输入进行JSON安全的转义处理
+    const jsonSafeInput = sanitizedInput
+      .replace(/\\/g, '\\\\')      // 转义反斜杠
+      .replace(/"/g, '\\"')        // 转义双引号
+      .replace(/\t/g, '\\t')       // 转义制表符
+      .replace(/\n/g, '\\n')       // 转义换行符
+      .replace(/\r/g, '\\r');      // 转义回车符
+    
     // 构建 prompt
     const prompt = `将用户输入的内容转换为符合以下 JSON schema 的纯粹 JSON 数组用来作为在 mac 日历中通过 apple script 创建日程的原始信息，仅返回严格格式的 JSON 数据，不包含多余字符或标点，确保格式正确。
 1. 如果未提供时间，使用当前日期（"${currentDate}"）和当前小时作为开始时间，持续时间为 1 小时。
 2. 如果只提供了开始日期而未提供结束日期，默认将结束日期设置为与开始日期相同。
-3. 用户输入的原始内容作为 description
-用户输入: "${sanitizedInput}"
+3. 用户输入的原始内容作为 description，但请确保description字段中的特殊字符被正确转义，避免JSON解析错误
+用户输入: "${jsonSafeInput}"
 
 JSON Schema:
 {
