@@ -85,10 +85,10 @@ CalendarGenie 将自动创建3个日历事件:
 
 ## ⚙️ 技术细节
 
-CalendarGenie 使用 GPT-4o 模型来分析文本并提取结构化的日程信息。工作流程如下:
+CalendarGenie 可使用 OpenRouter 或火山引擎（豆包）模型来分析文本并提取结构化的日程信息。工作流程如下:
 
-1. 用户输入文本被发送到 OpenRouter API
-2. GPT-4o 模型分析文本并返回结构化的JSON数据
+1. 用户输入文本被发送到 OpenRouter 或火山引擎 API
+2. 模型分析文本并返回结构化的JSON数据
 3. 脚本解析JSON并提取所有日程信息
 4. 使用 AppleScript 将日程添加到macOS "收件箱"日历中
 
@@ -130,6 +130,7 @@ CalendarGenie 使用 GPT-4o 模型来分析文本并提取结构化的日程信�
 ## 🙏 致谢
 
 - [OpenRouter](https://openrouter.ai/) 提供强大的AI模型接口
+- [火山引擎](https://www.volcengine.com/) 提供豆包模型接口
 - [Raycast Team](https://raycast.com/) 提供卓越的扩展平台
 - 所有测试和反馈的早期用户
 

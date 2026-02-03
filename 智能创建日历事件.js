@@ -27,12 +27,21 @@ const execPromise = promisify(exec);
 function getConfig() {
   const config = {
     apiKey: null,
-    model: 'google/gemini-2.0-flash-001' // 默认模型
+    provider: null,
+    model: null,
+    openrouterKey: null,
+    arkKey: null
   };
   
   // 首先尝试从环境变量读取
   if (process.env.OPENROUTER_API_KEY) {
-    config.apiKey = process.env.OPENROUTER_API_KEY;
+    config.openrouterKey = process.env.OPENROUTER_API_KEY;
+  }
+  if (process.env.ARK_API_KEY) {
+    config.arkKey = process.env.ARK_API_KEY;
+  }
+  if (process.env.AI_PROVIDER) {
+    config.provider = process.env.AI_PROVIDER;
   }
   if (process.env.AI_MODEL) {
     config.model = process.env.AI_MODEL;
@@ -48,17 +57,54 @@ function getConfig() {
       if (key && value) {
         const trimmedKey = key.trim();
         const trimmedValue = value.trim();
-        if (trimmedKey === 'OPENROUTER_API_KEY' && !config.apiKey) {
-          config.apiKey = trimmedValue;
+        if (trimmedKey === 'OPENROUTER_API_KEY' && !config.openrouterKey) {
+          config.openrouterKey = trimmedValue;
+        } else if (trimmedKey === 'ARK_API_KEY' && !config.arkKey) {
+          config.arkKey = trimmedValue;
+        } else if (trimmedKey === 'AI_PROVIDER' && !config.provider) {
+          config.provider = trimmedValue;
         } else if (trimmedKey === 'AI_MODEL') {
           config.model = trimmedValue;
         }
       }
     }
   }
+
+  if (config.provider) {
+    config.provider = config.provider.trim().toLowerCase();
+  }
   
+  if (!config.provider) {
+    if (config.openrouterKey) {
+      config.provider = 'openrouter';
+    } else if (config.arkKey) {
+      config.provider = 'volcengine';
+    }
+  }
+
+  if (!config.provider) {
+    config.provider = 'openrouter';
+  }
+
+  if (config.provider !== 'openrouter' && config.provider !== 'volcengine') {
+    throw new Error(`AI_PROVIDER 不合法: ${config.provider}。请使用 openrouter 或 volcengine。`);
+  }
+
+  if (!config.model) {
+    config.model = config.provider === 'volcengine'
+      ? 'doubao-seed-1-8-251228'
+      : 'google/gemini-3-flash-preview';
+  }
+
+  if (config.provider === 'volcengine') {
+    config.apiKey = config.arkKey;
+  } else {
+    config.apiKey = config.openrouterKey;
+  }
+
   if (!config.apiKey) {
-    throw new Error('未找到 OPENROUTER_API_KEY。请在 .env 文件中设置或作为环境变量提供。');
+    const keyName = config.provider === 'volcengine' ? 'ARK_API_KEY' : 'OPENROUTER_API_KEY';
+    throw new Error(`未找到 ${keyName}。请在 .env 文件中设置或作为环境变量提供。`);
   }
   
   return config;
@@ -68,10 +114,12 @@ async function main() {
   try {
     // 获取配置
     const config = getConfig();
-    const OPENROUTER_API_KEY = config.apiKey;
+    const API_KEY = config.apiKey;
     const AI_MODEL = config.model;
+    const AI_PROVIDER = config.provider;
     
-    console.log(`使用模型: ${AI_MODEL}`);
+    console.log(`使用模型(.env里的AI_MODEL): ${AI_MODEL}`);
+    console.log(`使用供应商(.env里的AI_PROVIDER): ${AI_PROVIDER}`);
     
     const userInput = process.argv.slice(2).join(" ");
     
@@ -170,9 +218,13 @@ JSON Schema:
     });
 
     // 构建 curl 命令
-    const curlCommand = `curl -s https://openrouter.ai/api/v1/chat/completions \\
+    const apiEndpoint = AI_PROVIDER === 'volcengine'
+      ? 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
+      : 'https://openrouter.ai/api/v1/chat/completions';
+
+    const curlCommand = `curl -s ${apiEndpoint} \\
       -H "Content-Type: application/json" \\
-      -H "Authorization: Bearer ${OPENROUTER_API_KEY}" \\
+      -H "Authorization: Bearer ${API_KEY}" \\
       -d '${requestBody}'`;
 
     console.log("调试: 准备执行API请求...");
